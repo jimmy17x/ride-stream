@@ -10,6 +10,8 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -28,26 +30,28 @@ public class GlobalProducer<K,V> {
 
   @Autowired
   private RiderConfig config;
+  Logger logger = LoggerFactory.getLogger(GlobalProducer.class);
+
 
   public void produceWithFullAck(String brokerTopic, V genericRecord) throws Exception {
       // key is null
       ProducerRecord<K, V> record = new ProducerRecord<K, V>(brokerTopic, genericRecord);
       try {
-          log.info("Monitoring - Starting produce....");
+        logger.info("Monitoring - Starting produce....");
           Future<RecordMetadata> futureHandle = this.kafkaFullAckProducer.send(record, (metadata, exception) -> {
-              log.info("In Completion");
+            logger.info("In Completion");
 
               if (metadata != null) {
-                  log.info("Monitoring - Sent record(key=" + record.key() + " value=" + record.value()
+                logger.info("Monitoring - Sent record(key=" + record.key() + " value=" + record.value()
                           + " meta(partition=" + metadata.partition() + " offset=" + metadata.offset() + ")");
               }
           });
           RecordMetadata recordMetadata = futureHandle.get();
-          log.info("Monitoring - Successfully submitted kafka msg with id : " + recordMetadata.offset());
+          logger.info("Monitoring - Successfully submitted kafka msg with id : " + recordMetadata.offset());
       } catch (Exception e) {
-          log.info("Monitoring - Failed during submission kafka msg");
+        logger.info("Monitoring - Failed during submission kafka msg");
           if (e.getCause() != null)
-              log.error("Monitoring - " + e.getCause().toString());
+            logger.error("Monitoring - " + e.getCause().toString());
           throw new RuntimeException(e.getMessage(), e.getCause());
       } finally {
           // initializer.getKafkaProducer().close();
@@ -56,15 +60,17 @@ public class GlobalProducer<K,V> {
 
   @PostConstruct
   private void initialize() {
+      logger.info("Initialized global producer");
       Properties props = new Properties();
       props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBrokerList());
       props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
       props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
       props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, RiderConstants.COMPRESSION_TYPE_CONFIG);
       props.put(ProducerConfig.RETRIES_CONFIG, config.getProducerRetryCount());
-      props.put("schema.registry.url", config.getSchemaRegistryUrl());
       props.put("acks", "all");
       kafkaFullAckProducer = new KafkaProducer<K, V>(props);
+      logger.info("Initialized global producer");
+
   }
 
 }

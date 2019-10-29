@@ -18,4 +18,28 @@ public class RiderConfig {
   @Value("${schema.registry.url}")
   private String schemaRegistryUrl;
 
+  public String getBrokerList() {
+    return brokerList;
+  }
+
+  public void setBrokerList(String brokerList) {
+    this.brokerList = brokerList;
+  }
+
+  public String getProducerRetryCount() {
+    return producerRetryCount;
+  }
+
+  public void setProducerRetryCount(String producerRetryCount) {
+    this.producerRetryCount = producerRetryCount;
+  }
+
+  public String getSchemaRegistryUrl() {
+    return schemaRegistryUrl;
+  }
+
+  public void setSchemaRegistryUrl(String schemaRegistryUrl) {
+    this.schemaRegistryUrl = schemaRegistryUrl;
+  }
+
 }
